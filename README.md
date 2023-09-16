@@ -1,8 +1,8 @@
-# Group TEAM_NUMBER
-Group Name: TEAM_NAME
+# Group 10
+Group Name: Group 10
 
-[MVP Link](http://cs196.cs.illinois.edu)
+[MVP Link](https://docs.google.com/document/d/1-KE6EvkWHUnb1YC-seaRCiLVrgIUHakQy4R83yKN3iw/edit?usp=sharing)
 
-Team Members: sgiri6
+Team Members: sgiri6, ndate2, ilacp2, opate23, pp41, rishab4
 
-Project Manager: PM_NETID
+Project Manager: ep14
