@@ -8,6 +8,7 @@ from haversine import *
 def motionFunc( file ):
     parsed_file = gpxpy.parse(file)
     #we want total distance and time to find avg velocity
+    #bub
     totalDistance = 0
     totalDuration = 0
 
@@ -34,8 +35,6 @@ def motionFunc( file ):
     avgVelocity = totalDistance/totalDuration
     return avgVelocity
 
-git config --global user.email "ilacpetrovic@gmail.com"
-git config --global user.name "Ila Petrovic"
 
 
 
