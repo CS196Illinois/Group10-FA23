@@ -37,7 +37,7 @@ for track in parsed_file.tracks:
 
             velocity = distance / time
              
-            print('Point at ({0},{1}) -> {2}'.format(point2.latitude, point2.longitude, point2.elevation))
+            print('Point at ({0},{1}) -> with elevation of {2}'.format(point2.latitude, point2.longitude, point2.elevation))
             print('Distance covered in this time of {0} s is {1} km, with velocity of {2} km/hr'.format(time, distance, velocity * 3600))
             point1 = point2
 
