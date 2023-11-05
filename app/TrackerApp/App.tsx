@@ -25,6 +25,15 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+
+import {
+  accelerometer,
+  gyroscope,
+  setUpdateIntervalForType,
+  SensorTypes
+} from "react-native-sensors";
+import { map, filter } from "rxjs/operators";
+
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -56,6 +65,7 @@ function Section({children, title}: SectionProps): JSX.Element {
 }
 
 function App(): JSX.Element {
+  console.log('Hello')
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -115,4 +125,23 @@ const styles = StyleSheet.create({
   },
 });
 
+
+setUpdateIntervalForType(SensorTypes.accelerometer, 100); // defaults to 100ms
+
+const subscription = accelerometer
+  .subscribe(
+    acceleration => console.log(`${acceleration.x}, ${acceleration.y}, ${acceleration.z}`),
+    error => {
+      console.log("The sensor is not available");
+    }
+  );
+
+setTimeout(() => {
+  // If it's the last subscription to accelerometer it will stop polling in the native API
+  subscription.unsubscribe();
+}, 10000);
+
+for(let i = 0; i < 5; i++) {
+    console.log("Hello")
+}
 export default App;
