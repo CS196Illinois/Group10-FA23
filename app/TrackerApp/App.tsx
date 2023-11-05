@@ -32,6 +32,9 @@ import {
   setUpdateIntervalForType,
   SensorTypes
 } from "react-native-sensors";
+
+import Geolocation from '@react-native-community/geolocation';
+
 import { map, filter } from "rxjs/operators";
 
 type SectionProps = PropsWithChildren<{
@@ -65,7 +68,6 @@ function Section({children, title}: SectionProps): JSX.Element {
 }
 
 function App(): JSX.Element {
-  console.log('Hello')
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -139,9 +141,14 @@ const subscription = accelerometer
 setTimeout(() => {
   // If it's the last subscription to accelerometer it will stop polling in the native API
   subscription.unsubscribe();
-}, 10000);
+}, 1000000);
 
-for(let i = 0; i < 5; i++) {
-    console.log("Hello")
-}
+
+Geolocation.watchPosition(
+        position => console.log(position),
+        error => console.log('error'),
+        {interval: 0, enableHighAccuracy: true, timeout: 20000, maximumAge: 0, distanceFilter: 0}
+);
+
+
 export default App;
