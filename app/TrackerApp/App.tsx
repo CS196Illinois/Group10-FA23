@@ -1,154 +1,87 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState, useEffect } from 'react';
+import { Platform, Text, View, StyleSheet } from 'react-native';
+import * as Device from 'expo-device';
+import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
+import BackgroundGeolocation, {
+  State,
+  Config,
+  Location,
+  LocationError,
+  Geofence,
+  GeofenceEvent,
+  GeofencesChangeEvent,
+  HeartbeatEvent,
+  HttpEvent,
+  MotionActivityEvent,
+  MotionChangeEvent,
+  ProviderChangeEvent,
+  ConnectivityChangeEvent
+} from "react-native-background-geolocation";
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+export default function App() {
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+  Location.useBackgroundPermissions()
 
 
-import {
-  accelerometer,
-  gyroscope,
-  setUpdateIntervalForType,
-  SensorTypes
-} from "react-native-sensors";
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === 'android' && !Device.isDevice) {
+        setErrorMsg(
+          'Oops, this will not work on Snack in an Android Emulator. Try it on your device!'
+        );
+        return;
+      }
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
 
-import Geolocation from '@react-native-community/geolocation';
+//      let location = await Location.getCurrentPositionAsync({});
+//      setLocation(location);
+    })();
+  }, []);
 
-import { map, filter } from "rxjs/operators";
+  let text = 'Waiting..';
+  if (errorMsg) {
+    text = errorMsg;
+  } else if (location) {
+    text = JSON.stringify(location);
+  }
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.paragraph}>{text}</Text>
     </View>
   );
 }
+Location.startLocationUpdatesAsync("LOCATION_TASK", {
+    "accuracy": 5,
+    "timeInterval": 2000,
+    "deferredUpdatesInterval": 100,
+})
+console.log("Hello")
 
-function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+TaskManager.defineTask("LOCATION_TASK", ({ data: { locations }, error }) => {
+ if (error) {
+   // check `error.message` for more details.
+   console.log(error.message)
+   return;
+ }
+ console.log('Received new locations', locations);
 });
 
-
-setUpdateIntervalForType(SensorTypes.accelerometer, 100); // defaults to 100ms
-
-const subscription = accelerometer
-  .subscribe(
-    acceleration => console.log(`${acceleration.x}, ${acceleration.y}, ${acceleration.z}`),
-    error => {
-      console.log("The sensor is not available");
-    }
-  );
-
-setTimeout(() => {
-  // If it's the last subscription to accelerometer it will stop polling in the native API
-  subscription.unsubscribe();
-}, 1000000);
-
-
-Geolocation.watchPosition(
-        position => console.log(position),
-        error => console.log('error'),
-        {interval: 0, enableHighAccuracy: true, timeout: 20000, maximumAge: 0, distanceFilter: 0}
-);
-
-
-export default App;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  paragraph: {
+    fontSize: 18,
+    textAlign: 'center',
+  },
+});
