@@ -41,6 +41,8 @@ type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
+
+
 function Section({children, title}: SectionProps): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   return (
@@ -149,6 +151,31 @@ Geolocation.watchPosition(
         error => console.log('error'),
         {interval: 0, enableHighAccuracy: true, timeout: 20000, maximumAge: 0, distanceFilter: 0}
 );
+
+const dataToSend = "TEST"
+
+fetch('http://localhost:5000/main', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(dataToSend),
+})
+  .then(response => {
+    if (!(response.ok)) {
+      throw new Error('Failed response!');
+    }
+    return response.json(); // Assuming the Flask app responds with JSON
+  })
+  .then(data => {
+    // Handle the data from the Flask app
+    console.log(data);
+  })
+  .catch(error => {
+    // Handle any errors
+    console.error(error);
+  });
+
 
 
 export default App;
