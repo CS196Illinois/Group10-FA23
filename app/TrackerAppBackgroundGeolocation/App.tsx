@@ -19,6 +19,11 @@ const HelloWorld = () => {
     const onLocation:Subscription = BackgroundGeolocation.onLocation((location) => {
       console.log('[onLocation]', location);
       setLocation(JSON.stringify(location, null, 2));
+      fetch('SERVER_URL_HERE', {
+        method: 'POST',
+        body: JSON.stringify(location, null, 2)
+      }
+      )
     })
 
     const onMotionChange:Subscription = BackgroundGeolocation.onMotionChange((event) => {
