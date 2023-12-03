@@ -17,7 +17,7 @@ const HelloWorld = () => {
   React.useEffect(() => {
     /// 1.  Subscribe to events.
     const onLocation:Subscription = BackgroundGeolocation.onLocation((location) => {
-      console.log('[onLocation]', location);
+      console.log('[onLocation]', JSON.stringify(location, null, 2));
       setLocation(JSON.stringify(location, null, 2));
       fetch('SERVER_URL_HERE', {
         method: 'POST',
@@ -85,6 +85,8 @@ const HelloWorld = () => {
       setLocation('');
     }
   }, [enabled]);
+
+    setInter
 
   return (
     <View style={{alignItems:'center'}}>

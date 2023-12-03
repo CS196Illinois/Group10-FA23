@@ -11,12 +11,13 @@
   "dependencies": {
     "expo": "~49.0.15",
     "expo-gradle-ext-vars": "^0.1.2",
+    "expo-splash-screen": "~0.20.5",
     "expo-status-bar": "~1.6.0",
+    "npx": "^10.2.2",
     "react": "18.2.0",
     "react-native": "0.72.6",
     "react-native-background-fetch": "^4.2.1",
-    "react-native-background-geolocation": "^4.14.4",
-    "expo-splash-screen": "~0.20.5"
+    "react-native-background-geolocation": "^4.14.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

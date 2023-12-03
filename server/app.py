@@ -1,12 +1,19 @@
 import flask
+import numpy as np
 from flask import request
 from flask import Flask
 from flask import jsonify
 from haversine import haversine
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 from scipy.signal import medfilt
+
+UNKNOWN = -1
+WALKING = 0
+BIKING = 1
+DRIVING = 2
+
+chunk_time_threshold = 120
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///locations.db'  # SQLite database file
@@ -30,11 +37,11 @@ def iso8601_to_datetime(iso8601_timestamp):
 
 def classify_movement(speed, threshold_walk=5, threshold_bike=15.0):
     if speed < threshold_walk:
-        return 'Walking'
+        return WALKING
     elif speed < threshold_bike:
-        return 'Biking'
+        return BIKING
     else:
-        return 'Driving'
+        return DRIVING
 
 
 @app.route("/location", methods=["POST"], strict_slashes=False)
@@ -55,76 +62,53 @@ def update_location():
         return jsonify({'error': 'Invalid data format'}), 400
 
 
+def get_chunk_average_speed(speeds, location_start, location_end):
+    return np.average(speeds[location_start: location_end])
+
+
+def get_chunk_total_distance(distances, location_start, location_end):
+    return np.sum(distances[location_start, location_end])
+
+
 @app.route("/stat", methods=["GET"], strict_slashes=False)
 def get_stats():
     locations = Location.query.all()
-
     if locations:
-        total_distance = 0
-        total_points = len(locations)
-
-        for i in range(1, total_points):
-            coordinates1 = (locations[i - 1].latitude, locations[i - 1].longitude)
-            coordinates2 = (locations[i].latitude, locations[i].longitude)
-
-            distance = haversine(coordinates1, coordinates2)
-            total_distance += distance
-
-        speeds = []
-        for i in range(1, total_points):
+        num_locations = len(locations)
+        speeds = [-1] * (num_locations - 1)
+        distances = [-1] * (num_locations - 1)
+        for i in range(1, num_locations):
             coordinates1 = (locations[i - 1].latitude, locations[i - 1].longitude)
             coordinates2 = (locations[i].latitude, locations[i].longitude)
 
             time_difference = (iso8601_to_datetime(locations[i].timestamp) - iso8601_to_datetime(
                 locations[i - 1].timestamp)).total_seconds()
+            distance = haversine(coordinates1, coordinates2)
+            distances[i - 1] = distance
+            speed = distance / time_difference
+            speeds[i - 1] = speed * 3600  # Convert to kilometers per hour
 
-            # Check if time difference is greater than zero to avoid division by zero
-            if time_difference > 0:
-                speed = haversine(coordinates1, coordinates2) / time_difference
-                speeds.append(speed * 3600)  # Convert to kilometers per hour
-            else:
-                speeds.append(0.0)
+        speeds = medfilt(speeds, kernel_size=5)
+        previous_endpoint = 0
+        chunk_endpoints = [0]
+        for i in range(1, num_locations):
+            time_difference = (iso8601_to_datetime(locations[i].timestamp) - iso8601_to_datetime(
+                locations[previous_endpoint].timestamp)).total_seconds()
+            if time_difference > chunk_time_threshold:
+                chunk_endpoints.append(i)
+                previous_endpoint = i
 
-        filtered_speeds = medfilt(speeds, kernel_size=5)
+        chunk_distances = np.zeros(shape=(len(chunk_endpoints) - 1,))
+        chunk_classes = np.full(shape=(len(chunk_endpoints) - 1,), fill_value=UNKNOWN)
+        for i in range(1, len(chunk_endpoints)):
+            chunk_speed = get_chunk_average_speed(speeds, chunk_endpoints[i - 1], chunk_endpoints[i])
+            chunk_distance = get_chunk_total_distance(distances, chunk_endpoints[i - 1], chunk_endpoints[i])
+            chunk_distances[i - 1] = chunk_distance
+            chunk_class = classify_movement(chunk_speed)
+            chunk_classes[i - 1] = chunk_class
 
-        # DEBUG
-        print("Original speeds:", speeds)
-        print("Filtered speeds:", filtered_speeds)
-
-        # Classify movement for each segment
-        segments = []
-        if len(filtered_speeds) > 0:
-
-            current_segment = {'start_index': 0, 'movement': classify_movement(filtered_speeds[0])}
-
-            for i in range(1, len(filtered_speeds)):
-                movement = classify_movement(filtered_speeds[i])
-
-                if movement != current_segment['movement']:
-                    current_segment['end_index'] = i - 1
-                    segments.append(current_segment)
-                    current_segment = {'start_index': i, 'movement': movement}
-
-            current_segment['end_index'] = len(filtered_speeds) - 1
-            segments.append(current_segment)
-
-            if current_segment['start_index'] <= len(filtered_speeds) - 1:
-                current_segment['end_index'] = len(filtered_speeds) - 1
-                segments.append(current_segment)
-        else:
-            segments.append({'start_index': 0, 'end_index': 0, 'movement': 'Unknown'})
-
-        # Calculate total time passed
-        total_time_passed = (iso8601_to_datetime(locations[-1].timestamp) - iso8601_to_datetime(
-            locations[0].timestamp)).total_seconds()
-
-        return jsonify({
-            'total_distance_all_points': total_distance,
-            'total_time_passed': total_time_passed,
-            'segments': segments
-        })
-    else:
-        return jsonify({'message': 'No data available'})
+        distance_biking = sum([chunk_distances[i] for i in range(len(chunk_distances)) if chunk_classes[i] == BIKING])
+        return jsonify({'num_chunks': len(chunk_classes), 'distance_biking': distance_biking})
 
 
 @app.route("/clear", methods=["GET"], strict_slashes=False)
@@ -138,38 +122,3 @@ def clear_data():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-""""average_speed_all_points = total_distance / total_points
-
-
-        window_size = 5 
-        current_time = iso8601_to_datetime(locations[-1].timestamp)
-        start_time = current_time - timedelta(seconds=window_size)
-
-        recent_locations = [loc for loc in locations if iso8601_to_datetime(loc.timestamp) >= start_time]
-
-        if recent_locations:
-            total_distance_recent = 0
-            total_points_recent = len(recent_locations)
-
-            for i in range(1, total_points_recent):
-                coordinates1 = (recent_locations[i - 1].latitude, recent_locations[i - 1].longitude)
-                coordinates2 = (recent_locations[i].latitude, recent_locations[i].longitude)
-
-                distance = haversine(coordinates1, coordinates2)
-                total_distance_recent += distance
-
-            average_speed_recent = total_distance_recent / total_points_recent
-        else:
-            average_speed_recent = 0
-
-        total_time_passed = (iso8601_to_datetime(locations[-1].timestamp) - iso8601_to_datetime(locations[0].timestamp)).total_seconds()
-
-
-        return jsonify({
-            'total_distance_all_points in km': total_distance,
-            'average_speed_all_points in km/hr': average_speed_all_points,
-            'total_distance_recent in km': total_distance_recent,
-            'average_speed_recent in km': average_speed_recent,
-            'total time passed in seconds': total_time_passed
- })"""
