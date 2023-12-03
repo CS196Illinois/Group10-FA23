@@ -67,14 +67,16 @@ def get_chunk_average_speed(speeds, location_start, location_end):
 
 
 def get_chunk_total_distance(distances, location_start, location_end):
-    return np.sum(distances[location_start, location_end])
+    return np.sum(distances[location_start: location_end])
 
 
 @app.route("/stat", methods=["GET"], strict_slashes=False)
 def get_stats():
     locations = Location.query.all()
     if locations:
+        locations = sorted(locations, key=lambda location: iso8601_to_datetime(location.timestamp))
         num_locations = len(locations)
+        print(num_locations)
         speeds = [-1] * (num_locations - 1)
         distances = [-1] * (num_locations - 1)
         for i in range(1, num_locations):
@@ -88,6 +90,9 @@ def get_stats():
             speed = distance / time_difference
             speeds[i - 1] = speed * 3600  # Convert to kilometers per hour
 
+        print(distances)
+        print(speeds)
+
         speeds = medfilt(speeds, kernel_size=5)
         previous_endpoint = 0
         chunk_endpoints = [0]
@@ -97,12 +102,14 @@ def get_stats():
             if time_difference > chunk_time_threshold:
                 chunk_endpoints.append(i)
                 previous_endpoint = i
-
+        print(speeds)
+        print(distances)
         chunk_distances = np.zeros(shape=(len(chunk_endpoints) - 1,))
         chunk_classes = np.full(shape=(len(chunk_endpoints) - 1,), fill_value=UNKNOWN)
         for i in range(1, len(chunk_endpoints)):
             chunk_speed = get_chunk_average_speed(speeds, chunk_endpoints[i - 1], chunk_endpoints[i])
             chunk_distance = get_chunk_total_distance(distances, chunk_endpoints[i - 1], chunk_endpoints[i])
+            print(i, chunk_speed, chunk_distance)
             chunk_distances[i - 1] = chunk_distance
             chunk_class = classify_movement(chunk_speed)
             chunk_classes[i - 1] = chunk_class

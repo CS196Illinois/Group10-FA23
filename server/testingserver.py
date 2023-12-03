@@ -1,11 +1,10 @@
-
 import requests
 import json
 from datetime import datetime, timedelta
 #def createtest(latitude, longitude, timestamp)
 
 #For every 2 minutes, change longitude by 0.115 to keep in the biking threshold.
-URL = "http://127.0.0.1:5000/location"
+URL = "http://127.0.0.1:5000"
 
 body = json_data = '''
 {
@@ -38,18 +37,25 @@ body = json_data = '''
   "timestamp": "2023-12-02T06:34:03.394Z"
 }
 '''
-
+speed1 = 10
+speed2 = 2
+longitude_delta1 = ((speed1 / 1.6) / 54.6) / 30
+longitude_delta2 = ((speed2 / 1.6) / 54.6) / 30
+response = requests.get(URL + "/clear")
+print(response.text)
 payload = json.loads(body)
 
 
 for i in range(100):
-
-    payload['coords']['longitude'] += 0.115
-    payload['timestamp'] = (datetime.fromisoformat(payload['timestamp']) + timedelta(minutes=2)).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%S") + 'Z'    
-
-    response = requests.post(URL, json=payload)
-
+    if i < 25 or 50 <= i < 75:
+        payload['coords']['longitude'] += longitude_delta1
+    else:
+        payload['coords']['longitude'] += longitude_delta2
+    payload['timestamp'] = (datetime.fromisoformat(payload['timestamp']) + timedelta(minutes=2)).isoformat()
+    response = requests.post(URL + "/location", json=payload)
     print(f"Request {i + 1}: {response.status_code}")
     print(response.text)
 
-   
+response = requests.get(URL + "/stat")
+print(response.text)
+
