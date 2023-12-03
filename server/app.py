@@ -95,7 +95,7 @@ def get_stats():
         segments = []
         if len(filtered_speeds) > 0:
 
-            current_segment = {'start_index': 0, 'movement': classify_movement(filtered_speeds[0])}
+            current_segment = {'start_index': 0, 'movement': classify_movement(filtered_speeds[0]), 'distance_for segment': 0}
 
             for i in range(1, len(filtered_speeds)):
                 movement = classify_movement(filtered_speeds[i])
@@ -117,10 +117,13 @@ def get_stats():
         # Calculate total time passed
         total_time_passed = (iso8601_to_datetime(locations[-1].timestamp) - iso8601_to_datetime(
             locations[0].timestamp)).total_seconds()
+        
+        total_average_speed = total_distance / total_time_passed * 360
 
         return jsonify({
-            'total_distance_all_points': total_distance,
-            'total_time_passed': total_time_passed,
+            'total_distance_all_points_in_km': total_distance,
+            'total_time_passed_in_seconds': total_time_passed,
+            'total_average_speed_in_km_hr': total_average_speed,
             'segments': segments
         })
     else:
