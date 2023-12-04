@@ -13,6 +13,7 @@ import BackgroundGeolocation, {
 const HelloWorld = () => {
   const [enabled, setEnabled] = React.useState(false);
   const [location, setLocation] = React.useState('');
+  const [bikingDistance, setBikingDistance] = React.useState(0.0)
 
   React.useEffect(() => {
     /// 1.  Subscribe to events.
@@ -86,15 +87,46 @@ const HelloWorld = () => {
     }
   }, [enabled]);
 
-    setInter
+  setInterval(() => {
+    let response = await fetch('http://127.0.0.1:5000/stat')
+    console.log(response.json())
+  }, 2000);
 
   return (
     <View style={{alignItems:'center'}}>
       <Text>Click to enable BackgroundGeolocation</Text>
       <Switch value={enabled} onValueChange={setEnabled} />
       <Text style={{fontFamily:'monospace', fontSize:12}}>{location}</Text>
+      <Text>{bikingDistance}</Text>
     </View>
   )
 }
+
+// function Counter() {
+//     useInterval(() => {
+//       fetch('http://127.0.0.1:5000/stat').then(result => result.json()).then(result => result.stringify())
+//     }, 1000);
+//   }
+//   import  { useState, useRef } from 'react';
+//
+//   function useInterval(callback, delay) {
+//     const savedCallback = useRef();
+//
+//     // Remember the latest callback.
+//     React.useEffect(() => {
+//       savedCallback.current = callback;
+//     }, [callback]);
+//
+//     // Set up the interval.
+//     React.useEffect(() => {
+//       function tick() {
+//         savedCallback.current();
+//       }
+//       if (delay !== null) {
+//         let id = setInterval(tick, delay);
+//         return () => clearInterval(id);
+//       }
+//     }, [delay]);
+//   }
 
 export default HelloWorld;
