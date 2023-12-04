@@ -115,7 +115,7 @@ def get_stats():
             chunk_classes[i - 1] = chunk_class
 
         distance_biking = sum([chunk_distances[i] for i in range(len(chunk_distances)) if chunk_classes[i] == BIKING])
-        return jsonify({'num_chunks': len(chunk_classes), 'distance_biking': distance_biking})
+        return jsonify({ 'distance_biking': distance_biking})
 
 
 @app.route("/clear", methods=["GET"], strict_slashes=False)
