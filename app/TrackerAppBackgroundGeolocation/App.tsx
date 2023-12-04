@@ -4,6 +4,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+
 
 import BackgroundGeolocation, {
   Location,
@@ -102,31 +104,44 @@ const HelloWorld = () => {
   )
 }
 
-// function Counter() {
-//     useInterval(() => {
-//       fetch('http://127.0.0.1:5000/stat').then(result => result.json()).then(result => result.stringify())
-//     }, 1000);
-//   }
-//   import  { useState, useRef } from 'react';
-//
-//   function useInterval(callback, delay) {
-//     const savedCallback = useRef();
-//
-//     // Remember the latest callback.
-//     React.useEffect(() => {
-//       savedCallback.current = callback;
-//     }, [callback]);
-//
-//     // Set up the interval.
-//     React.useEffect(() => {
-//       function tick() {
-//         savedCallback.current();
-//       }
-//       if (delay !== null) {
-//         let id = setInterval(tick, delay);
-//         return () => clearInterval(id);
-//       }
-//     }, [delay]);
-//   }
+type CallbackFunction = () => void;
+
+const Counter: React.FC = () => {
+  const [data, setData] = useState<string | null>(null);
+
+  useInterval(() => {
+    fetch('http://127.0.0.1:5000/stat')
+      .then(result => result.json())
+      .then(result => setData(result.stringify()))
+      .catch(error => console.error('Error fetching data:', error));
+  }, 1000);
+
+  return (
+    <div>
+      <p>Data: {data}</p>
+    </div>
+  );
+};
+
+
+function useInterval(callback: CallbackFunction, delay: number | null) {
+  const savedCallback = useRef<CallbackFunction | null>(null);
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    function tick() {
+      if (savedCallback.current) {
+        savedCallback.current();
+      }
+    }
+    if (delay !== null) {
+      let id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
 
 export default HelloWorld;
